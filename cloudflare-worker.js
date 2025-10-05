@@ -99,7 +99,16 @@ async function proxyDriveFile(fileId, request) {
 
 async function getAccessToken() {
   // Get service account credentials from JSON environment variable
+  console.log('SERVICE_ACCOUNT_JSON exists:', typeof SERVICE_ACCOUNT_JSON !== 'undefined')
+
+  if (typeof SERVICE_ACCOUNT_JSON === 'undefined') {
+    throw new Error('SERVICE_ACCOUNT_JSON environment variable not set')
+  }
+
   const serviceAccount = SERVICE_ACCOUNT_JSON
+  console.log('Service account email:', serviceAccount.client_email)
+
+  // Get service account credentials from JSON environment variable
   const serviceAccountEmail = serviceAccount.client_email
   const privateKey = serviceAccount.private_key
   const projectId = serviceAccount.project_id
@@ -148,4 +157,5 @@ function getMimeType(filename) {
   }
   return mimeTypes[ext] || 'application/octet-stream'
 }
+
 
