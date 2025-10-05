@@ -19,7 +19,7 @@ function getExtensionFromMimeType(mimeType) {
   return mimeToExt[mimeType] || 'jpg';
 }
 
-const baseUrl = 'https://25af0734acab.ngrok-free.app';
+const baseUrl = 'https://notion-drive-proxy.roston-yoo.workers.dev';
 
 console.log('🎯 NOTION-COMPATIBLE IMAGE URLs');
 console.log('================================');
@@ -56,3 +56,4 @@ console.log('');
 console.log('✅ These URLs now end with proper file extensions!');
 console.log('✅ Perfect for Notion Files & media fields!');
 console.log('✅ Images will show previews immediately!');
+
