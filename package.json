@@ -1,0 +1,17 @@
+{
+  "name": "google-drive-proxy",
+  "version": "1.0.0",
+  "description": "HTTP proxy for Google Drive files with Notion-compatible headers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
