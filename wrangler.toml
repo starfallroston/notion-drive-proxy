@@ -1,6 +1,7 @@
-name = "google-drive-proxy"
+name = "notion-drive-proxy"
 main = "cloudflare-worker.js"
 compatibility_date = "2025-10-05"
 
 [build]
 command = "npm install @tsndr/cloudflare-worker-jwt"
+
