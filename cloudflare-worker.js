@@ -21,6 +21,7 @@ async function handleRequest(request) {
       headers: { 'Content-Type': 'application/json' }
     })
   }
+  
   // Debug endpoint
   if (url.pathname === '/debug') {
     try {
@@ -38,6 +39,7 @@ async function handleRequest(request) {
       })
     }
   }
+  
   // Root endpoint
   if (url.pathname === '/') {
     return new Response(JSON.stringify({
@@ -54,17 +56,32 @@ async function handleRequest(request) {
 
 async function proxyDriveFile(fileId, request) {
   try {
+    console.log('Proxying file:', fileId)
+    
+    // Remove file extension if present (Google Drive API needs just the ID)
+    let cleanFileId = fileId
+    if (fileId.includes('.')) {
+      cleanFileId = fileId.split('.')[0]
+      console.log('Cleaned file ID:', cleanFileId)
+    }
+    
     // Get Google Drive access token
     const token = await getAccessToken()
+    console.log('Got access token')
     
     // Get file metadata
-    const metadataResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=name,mimeType,size,modifiedTime`, {
+    const metadataResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${cleanFileId}?fields=name,mimeType,size,modifiedTime`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
     
+    console.log('Metadata response status:', metadataResponse.status)
+    
     if (!metadataResponse.ok) {
+      const errorText = await metadataResponse.text()
+      console.log('Metadata error:', errorText)
+      
       if (metadataResponse.status === 404) {
         return new Response(JSON.stringify({ error: 'File not found' }), { status: 404 })
       }
@@ -81,7 +98,7 @@ async function proxyDriveFile(fileId, request) {
     const contentType = mimeType.startsWith('image/') ? mimeType : getMimeType(name)
     
     // Get file content
-    const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${cleanFileId}?alt=media`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -97,7 +114,7 @@ async function proxyDriveFile(fileId, request) {
         'Content-Type': contentType,
         'Content-Length': size,
         'Cache-Control': 'public, max-age=31536000, immutable',
-        'ETag': `"${fileId}-${modifiedTime}"`,
+        'ETag': `"${cleanFileId}-${modifiedTime}"`,
         'Last-Modified': new Date(modifiedTime).toUTCString(),
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
@@ -116,15 +133,14 @@ async function proxyDriveFile(fileId, request) {
 async function getAccessToken() {
   // Get service account credentials from JSON environment variable
   console.log('SERVICE_ACCOUNT_JSON exists:', typeof SERVICE_ACCOUNT_JSON !== 'undefined')
-
+  
   if (typeof SERVICE_ACCOUNT_JSON === 'undefined') {
     throw new Error('SERVICE_ACCOUNT_JSON environment variable not set')
   }
-
+  
   const serviceAccount = SERVICE_ACCOUNT_JSON
   console.log('Service account email:', serviceAccount.client_email)
-
-  // Get service account credentials from JSON environment variable
+  
   const serviceAccountEmail = serviceAccount.client_email
   const privateKey = serviceAccount.private_key
   const projectId = serviceAccount.project_id
@@ -154,7 +170,16 @@ async function getAccessToken() {
     })
   })
   
+  console.log('Token response status:', tokenResponse.status)
+  
+  if (!tokenResponse.ok) {
+    const errorText = await tokenResponse.text()
+    console.log('Token error:', errorText)
+    throw new Error(`Failed to get access token: ${tokenResponse.status} ${errorText}`)
+  }
+  
   const tokenData = await tokenResponse.json()
+  console.log('Access token obtained successfully')
   return tokenData.access_token
 }
 
@@ -173,6 +198,4 @@ function getMimeType(filename) {
   }
   return mimeTypes[ext] || 'application/octet-stream'
 }
-
-
 
