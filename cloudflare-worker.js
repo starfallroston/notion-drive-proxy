@@ -21,7 +21,23 @@ async function handleRequest(request) {
       headers: { 'Content-Type': 'application/json' }
     })
   }
-  
+  // Debug endpoint
+  if (url.pathname === '/debug') {
+    try {
+      const hasServiceAccount = typeof SERVICE_ACCOUNT_JSON !== 'undefined'
+      const email = hasServiceAccount ? SERVICE_ACCOUNT_JSON.client_email : 'not set'
+      return new Response(JSON.stringify({ 
+        hasServiceAccount,
+        email: email.substring(0, 10) + '...' // Only show first 10 chars for security
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    } catch (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+  }
   // Root endpoint
   if (url.pathname === '/') {
     return new Response(JSON.stringify({
@@ -157,5 +173,6 @@ function getMimeType(filename) {
   }
   return mimeTypes[ext] || 'application/octet-stream'
 }
+
 
 
