@@ -1,4 +1,6 @@
 // Cloudflare Worker version
+import jwt from '@tsndr/cloudflare-worker-jwt'
+
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
@@ -96,38 +98,24 @@ async function proxyDriveFile(fileId, request) {
 }
 
 async function getAccessToken() {
-  // Service account credentials (set in Cloudflare Workers secrets)
-  const serviceAccount = {
-    "type": "service_account",
-    "project_id": "your-project-id",
-    "private_key_id": "your-private-key-id",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n",
-    "client_email": "your-service-account@your-project.iam.gserviceaccount.com",
-    "client_id": "your-client-id",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-service-account%40your-project.iam.gserviceaccount.com"
-  }
+  // Get service account credentials from JSON environment variable
+  const serviceAccount = SERVICE_ACCOUNT_JSON
+  const serviceAccountEmail = serviceAccount.client_email
+  const privateKey = serviceAccount.private_key
+  const projectId = serviceAccount.project_id
   
-  // Create JWT
-  const header = {
-    alg: 'RS256',
-    typ: 'JWT'
-  }
-  
+  // Create JWT payload
   const now = Math.floor(Date.now() / 1000)
   const payload = {
-    iss: serviceAccount.client_email,
+    iss: serviceAccountEmail,
     scope: 'https://www.googleapis.com/auth/drive.readonly',
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600
   }
   
-  // Note: In production, use a proper JWT library
-  // This is a simplified version for demonstration
-  const jwt = await createJWT(header, payload, serviceAccount.private_key)
+  // Sign JWT with private key
+  const assertion = await jwt.sign(payload, privateKey, { algorithm: 'RS256' })
   
   // Exchange JWT for access token
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -137,7 +125,7 @@ async function getAccessToken() {
     },
     body: new URLSearchParams({
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt
+      assertion: assertion
     })
   })
   
@@ -161,9 +149,3 @@ function getMimeType(filename) {
   return mimeTypes[ext] || 'application/octet-stream'
 }
 
-// Simplified JWT creation (use proper library in production)
-async function createJWT(header, payload, privateKey) {
-  // This is a placeholder - implement proper JWT creation
-  // or use a library like 'jose' or 'jsonwebtoken'
-  throw new Error('JWT creation not implemented - use a proper JWT library')
-}
