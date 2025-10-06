@@ -70,7 +70,7 @@ async function proxyDriveFile(fileId, request) {
     console.log('Got access token')
     
     // Get file metadata
-    const metadataResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${cleanFileId}?fields=name,mimeType,size,modifiedTime`, {
+    const metadataResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${cleanFileId}?fields=name,mimeType,size,modifiedTime&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -98,7 +98,7 @@ async function proxyDriveFile(fileId, request) {
     const contentType = mimeType.startsWith('image/') ? mimeType : getMimeType(name)
     
     // Get file content
-    const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${cleanFileId}?alt=media`, {
+    const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${cleanFileId}?alt=media&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
